@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+   Design tokens
+   Every color in the app comes from these variables. Light values live
+   on :root, dark values on html.dark (toggled by ThemeContext).
+   Values are space-separated RGB so Tailwind can add opacity.
+------------------------------------------------------------------- */
+:root {
+  --canvas: 246 248 245;      /* page background */
+  --surface: 255 255 255;     /* cards, sidebar, header */
+  --soft: 240 244 239;        /* subtle fills, hover states */
+  --field: 255 255 255;       /* inputs */
+  --line: 226 232 225;        /* borders and dividers */
+  --ink: 27 42 33;            /* primary text */
+  --muted: 100 115 106;       /* secondary text */
+  --brand: 47 107 79;         /* primary green */
+  --brand-dark: 36 84 62;     /* primary hover */
+  --brand-soft: 230 240 232;  /* tinted green backgrounds */
+  --on-brand: 255 255 255;    /* text on top of brand */
+  --shadow: 27 42 33;
+  color-scheme: light;
+}
+
+html.dark {
+  --canvas: 11 21 16;
+  --surface: 20 37 27;
+  --soft: 28 51 37;
+  --field: 15 30 21;
+  --line: 48 74 57;
+  --ink: 240 253 244;
+  --muted: 167 185 171;
+  --brand: 74 222 128;
+  --brand-dark: 134 239 172;
+  --brand-soft: 31 58 42;
+  --on-brand: 11 21 16;
+  --shadow: 0 0 0;
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    font-family: Inter, system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-synthesis: none;
+  }
+
+  body {
+    @apply min-h-screen min-w-[320px] bg-canvas text-ink antialiased transition-colors duration-200;
+    margin: 0;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::selection {
+    @apply bg-brand/25 text-ink;
+  }
+
+  /* Keyboard focus that is visible in both themes */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-canvas;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: rgb(var(--brand));
+  }
+}
+
+/* ------------------------------------------------------------------
+   Reusable building blocks, so pages stay short and consistent
+------------------------------------------------------------------- */
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-soft transition-colors duration-200;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-line bg-field px-3.5 py-2.5 text-sm text-ink outline-none transition placeholder:text-muted/70 focus:border-brand focus:ring-2 focus:ring-brand/20;
+  }
+
+  .field:focus-visible {
+    @apply ring-offset-0;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand text-on-brand shadow-sm hover:bg-brand-dark hover:shadow-md active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply btn border border-line bg-surface text-ink hover:bg-soft;
+  }
+
+  .btn-ghost {
+    @apply btn text-muted hover:bg-soft hover:text-ink;
+  }
+
+  .btn-danger {
+    @apply btn border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/70;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
