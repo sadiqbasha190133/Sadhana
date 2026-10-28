@@ -1,44 +1,65 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ------------------------------------------------------------------
-   Design tokens
-   Every color in the app comes from these variables. Light values live
-   on :root, dark values on html.dark (toggled by ThemeContext).
-   Values are space-separated RGB so Tailwind can add opacity.
-------------------------------------------------------------------- */
+/* =========================================================
+   SADHANA DESIGN SYSTEM
+   Light: Green and white
+   Dark: Pure black, emerald green, neon-green buttons
+========================================================= */
+
 :root {
-  --canvas: 246 248 245;      /* page background */
-  --surface: 255 255 255;     /* cards, sidebar, header */
-  --soft: 240 244 239;        /* subtle fills, hover states */
-  --field: 255 255 255;       /* inputs */
-  --line: 226 232 225;        /* borders and dividers */
-  --ink: 27 42 33;            /* primary text */
-  --muted: 100 115 106;       /* secondary text */
-  --brand: 47 107 79;         /* primary green */
-  --brand-dark: 36 84 62;     /* primary hover */
-  --brand-soft: 230 240 232;  /* tinted green backgrounds */
-  --on-brand: 255 255 255;    /* text on top of brand */
+  --canvas: 246 248 245;
+  --surface: 255 255 255;
+  --soft: 240 244 239;
+  --field: 255 255 255;
+  --line: 226 232 225;
+
+  --ink: 27 42 33;
+  --muted: 100 115 106;
+
+  --brand: 47 107 79;
+  --brand-dark: 36 84 62;
+  --brand-soft: 230 240 232;
+  --on-brand: 255 255 255;
+
   --shadow: 27 42 33;
+
   color-scheme: light;
 }
 
+/* =========================================================
+   DARK MODE — PURE BLACK + EMERALD
+========================================================= */
+
 html.dark {
-  --canvas: 11 21 16;
-  --surface: 20 37 27;
-  --soft: 28 51 37;
-  --field: 15 30 21;
-  --line: 48 74 57;
-  --ink: 240 253 244;
-  --muted: 167 185 171;
-  --brand: 74 222 128;
-  --brand-dark: 134 239 172;
-  --brand-soft: 31 58 42;
-  --on-brand: 11 21 16;
+  --canvas: 0 0 0;
+  --surface: 0 0 0;
+  --soft: 17 25 20;
+  --field: 5 5 5;
+
+  /* Subtle emerald borders */
+  --line: 42 77 55;
+
+  /* Main typography */
+  --ink: 255 255 255;
+  --muted: 185 195 188;
+
+  /* Emerald brand colours */
+  --brand: 52 211 153;
+  --brand-dark: 110 231 183;
+  --brand-soft: 8 45 34;
+  --on-brand: 0 15 10;
+
   --shadow: 0 0 0;
+
   color-scheme: dark;
 }
+
+/* =========================================================
+   BASE STYLES
+========================================================= */
 
 @layer base {
   html {
@@ -52,6 +73,7 @@ html.dark {
   body {
     @apply min-h-screen min-w-[320px] bg-canvas text-ink antialiased transition-colors duration-200;
     margin: 0;
+    background-color: rgb(var(--canvas));
   }
 
   button,
@@ -78,7 +100,6 @@ html.dark {
     @apply bg-brand/25 text-ink;
   }
 
-  /* Keyboard focus that is visible in both themes */
   :focus-visible {
     @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-canvas;
   }
@@ -87,16 +108,36 @@ html.dark {
   input[type="radio"] {
     accent-color: rgb(var(--brand));
   }
+
+  html.dark input,
+  html.dark select,
+  html.dark textarea {
+    color-scheme: dark;
+  }
 }
 
-/* ------------------------------------------------------------------
-   Reusable building blocks, so pages stay short and consistent
-------------------------------------------------------------------- */
+/* =========================================================
+   REUSABLE COMPONENTS
+========================================================= */
+
 @layer components {
+  /* Cards: black background and subtle green borders */
   .card {
-    @apply rounded-2xl border border-line bg-surface shadow-soft transition-colors duration-200;
+    @apply rounded-2xl border border-line bg-surface transition-colors duration-200;
+    box-shadow: none;
   }
 
+  html.dark .card {
+    background-color: #000000;
+    border-color: #28513A;
+    box-shadow: 0 0 12px rgb(52 211 153 / 4%);
+  }
+
+  html.dark .card:hover {
+    border-color: #347653;
+  }
+
+  /* Form fields */
   .field {
     @apply w-full rounded-lg border border-line bg-field px-3.5 py-2.5 text-sm text-ink outline-none transition placeholder:text-muted/70 focus:border-brand focus:ring-2 focus:ring-brand/20;
   }
@@ -105,37 +146,222 @@ html.dark {
     @apply ring-offset-0;
   }
 
+  html.dark .field {
+    background-color: #050505;
+    border-color: #28513A;
+    color: #FFFFFF;
+  }
+
+  html.dark .field:focus {
+    border-color: #34D399;
+    box-shadow: 0 0 0 2px rgb(52 211 153 / 15%);
+  }
+
+  html.dark .field::placeholder {
+    color: #858585;
+  }
+
+  /* Shared button layout */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition duration-200 disabled:pointer-events-none disabled:opacity-50;
   }
 
+  /* Primary button: preserve the light theme */
   .btn-primary {
-    @apply btn bg-brand text-on-brand shadow-sm hover:bg-brand-dark hover:shadow-md active:scale-[0.98];
+    @apply btn;
+    background: rgb(var(--brand));
+    color: rgb(var(--on-brand));
+    border: 1px solid rgb(var(--brand));
+    box-shadow: 0 2px 8px rgb(var(--brand) / 15%);
+    transition:
+      background 200ms ease,
+      box-shadow 200ms ease,
+      transform 150ms ease;
   }
 
+  .btn-primary:hover {
+    background: rgb(var(--brand-dark));
+    border-color: rgb(var(--brand-dark));
+    box-shadow: 0 0 14px rgb(var(--brand) / 25%);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  /* Dark mode: shining emerald-green button */
+  html.dark .btn-primary {
+    background: linear-gradient(
+      120deg,
+      #A7F3D0 0%,
+      #6EE7B7 15%,
+      #34D399 35%,
+      #059669 58%,
+      #10B981 76%,
+      #6EE7B7 100%
+    );
+
+    color: #001A10;
+    border: 1px solid #6EE7B7;
+
+    box-shadow:
+      0 0 8px rgb(52 211 153 / 30%),
+      0 0 18px rgb(52 211 153 / 12%),
+      inset 0 1px 1px rgb(255 255 255 / 35%);
+  }
+
+  html.dark .btn-primary:hover {
+    background: linear-gradient(
+      120deg,
+      #D1FAE5 0%,
+      #6EE7B7 35%,
+      #34D399 70%,
+      #A7F3D0 100%
+    );
+
+    border-color: #A7F3D0;
+
+    box-shadow:
+      0 0 12px rgb(52 211 153 / 50%),
+      0 0 28px rgb(52 211 153 / 22%),
+      inset 0 1px 2px rgb(255 255 255 / 45%);
+  }
+
+  /* Secondary buttons */
   .btn-secondary {
     @apply btn border border-line bg-surface text-ink hover:bg-soft;
   }
 
+  html.dark .btn-secondary {
+    background-color: #000000;
+    color: #FFFFFF;
+    border-color: #347653;
+  }
+
+  html.dark .btn-secondary:hover {
+    background-color: #101B14;
+    border-color: #34D399;
+    box-shadow: 0 0 10px rgb(52 211 153 / 12%);
+  }
+
+  /* Quiet buttons */
   .btn-ghost {
     @apply btn text-muted hover:bg-soft hover:text-ink;
   }
 
+  html.dark .btn-ghost:hover {
+    color: #6EE7B7;
+  }
+
+  /* Error buttons */
   .btn-danger {
     @apply btn border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/70;
   }
 
+  /* Labels */
   .label {
     @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted;
   }
 }
 
-/* Respect users who prefer less motion */
+/* =========================================================
+   SEMANTIC MESSAGE COLOURS
+   Choose colours according to the meaning of the message.
+========================================================= */
+
+@layer utilities {
+  /* Success and correct answers */
+  .text-success {
+    color: #4ADE80;
+  }
+
+  /* Errors and incorrect answers */
+  .text-error {
+    color: #F87171;
+  }
+
+  /* Warnings and time running low */
+  .text-warning {
+    color: #FBBF24;
+  }
+
+  /* Informational messages */
+  .text-info {
+    color: #60A5FA;
+  }
+
+  /* Important scores and highlights */
+  .text-highlight {
+    color: #6EE7B7;
+  }
+
+  /* AI insights and special features */
+  .text-purple {
+    color: #C4B5FD;
+  }
+
+  /* Secondary metrics */
+  .text-cyan {
+    color: #67E8F9;
+  }
+
+  /* Matching semantic borders */
+  .border-success {
+    border-color: #4ADE80;
+  }
+
+  .border-error {
+    border-color: #F87171;
+  }
+
+  .border-warning {
+    border-color: #FBBF24;
+  }
+
+  .border-info {
+    border-color: #60A5FA;
+  }
+
+  /* Subtle semantic backgrounds */
+  .bg-success-soft {
+    background-color: rgb(74 222 128 / 12%);
+  }
+
+  .bg-error-soft {
+    background-color: rgb(248 113 113 / 12%);
+  }
+
+  .bg-warning-soft {
+    background-color: rgb(251 191 36 / 12%);
+  }
+
+  .bg-info-soft {
+    background-color: rgb(96 165 250 / 12%);
+  }
+
+  /* Emerald glow utilities */
+  .glow-green {
+    box-shadow:
+      0 0 8px rgb(52 211 153 / 20%),
+      0 0 18px rgb(52 211 153 / 8%);
+  }
+
+  .border-neon-green {
+    border-color: #34D399;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

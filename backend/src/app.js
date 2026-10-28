@@ -13,6 +13,7 @@ import {
 import authRoutes from "./routes/auth.routes.js";
 import questionRoutes from "./routes/question.routes.js";
 import mockTestRoutes from "./routes/mockTest.routes.js";
+import resultsRouts from "./routes/results.routes.js"
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/questions", questionRoutes);
 app.use("/api/v1/mock-tests", mockTestRoutes);
+app.use("/api/v1/results", resultsRouts);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

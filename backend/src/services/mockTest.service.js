@@ -828,3 +828,57 @@ export const getAttemptHistoryService = async ({
     },
   };
 };
+
+
+export async function deleteMockTestResultService(userId, attemptId) {
+  // Validate the MongoDB attempt ID.
+  if (!mongoose.isValidObjectId(attemptId)) {
+    const error = new Error("Invalid mock-test attempt ID.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Find the attempt belonging to the authenticated user.
+  const attempt = await TestAttempt.findOne({
+    _id: attemptId,
+    user: userId,
+  });
+
+  if (!attempt) {
+    const error = new Error(
+      "Mock-test result not found or you do not have permission to delete it."
+    );
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Never delete an active test attempt through the results page.
+  if (attempt.status === "in_progress") {
+    const error = new Error(
+      "An in-progress mock test cannot be deleted from the results page."
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // Delete only this user's finished attempt.
+  const deletion = await TestAttempt.deleteOne({
+    _id: attempt._id,
+    user: userId,
+    status: { $in: ["submitted", "expired"] },
+  });
+
+  if (deletion.deletedCount !== 1) {
+    const error = new Error(
+      "The mock-test result could not be deleted. Please try again."
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return {
+    attemptId: attempt._id,
+    status: attempt.status,
+    deleted: true,
+  };
+}

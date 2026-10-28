@@ -13,15 +13,12 @@ import {
   advanceMockTestSectionController,
   getAttemptResultController,
   deleteMockTestController,
-  getAllResults,
 } from "../controllers/mockTest.controller.js";
 
 
 const router = Router();
 
 router.use(authenticate);
-
-router.get("/results", getAllResults)
 
 router.post("/", createMockTest);
 router.get("/", listMockTests);
@@ -44,7 +41,6 @@ router.get(
   "/attempts/:attemptId/result",
   getAttemptResultController
 );
-
 
 router.delete("/:id", deleteMockTestController);
 

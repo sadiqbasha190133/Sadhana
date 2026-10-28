@@ -51,3 +51,12 @@ export async function getAttemptResult(attemptId) {
 
   return unwrap(response);
 }
+
+
+export async function deleteMockTestResult(attemptId) {
+  const response = await api.delete(
+    `/results/delete-results/${attemptId}`
+  );
+
+  return response.data;
+}

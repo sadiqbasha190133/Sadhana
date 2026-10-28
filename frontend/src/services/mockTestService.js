@@ -39,7 +39,7 @@ export async function getAllMockTestResults({
   page = 1,
   limit = 10,
 } = {}) {
-  const response = await api.get("/mock-tests/results", {
+  const response = await api.get("/results/all-mockTest-results", {
     params: { status, page, limit },
   });
 
