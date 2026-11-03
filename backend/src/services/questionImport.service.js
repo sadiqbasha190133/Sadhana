@@ -122,6 +122,14 @@ export function parseQuestionFile(file) {
     });
 
     if (errors.length > 0) {
+        console.log("\n========== IMPORT VALIDATION ERRORS ==========");
+
+        errors.forEach((error, index) => {
+            console.log(`\nIssue ${index + 1}:`);
+            console.log(JSON.stringify(error, null, 2));
+        });
+
+        console.log("\n========== TOTAL ERRORS:", errors.length, "==========\n");
         throw Object.assign(
             new Error("Import rejected. Fix the invalid questions and try again."),
             {

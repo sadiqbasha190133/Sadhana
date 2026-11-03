@@ -1,13 +1,13 @@
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertCircle,
   BookOpen,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   FileUp,
-  Filter,
   LoaderCircle,
   Plus,
   Search,
@@ -44,14 +44,14 @@ function getOptions(question) {
 function formatDate(value) {
   if (!value) return "—";
 
-  const date = new Date(value);
+  const date = new Date(value)
   return Number.isNaN(date.getTime())
     ? "—"
     : date.toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
 }
 
 function Modal({ title, onClose, children, wide = false }) {
@@ -75,9 +75,8 @@ function Modal({ title, onClose, children, wide = false }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-line bg-surface shadow-xl ${
-          wide ? "max-w-2xl" : "max-w-lg"
-        }`}
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-line bg-surface shadow-xl ${wide ? "max-w-2xl" : "max-w-lg"
+          }`}
       >
         <div className="sticky top-0 flex items-center justify-between border-b border-line bg-surface px-5 py-4">
           <h2 className="text-base font-semibold text-ink">{title}</h2>
@@ -96,6 +95,124 @@ function Modal({ title, onClose, children, wide = false }) {
   );
 }
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]; // backend allows max 100
+const DEFAULT_PAGE_SIZE = 20;
+
+// Builds [1, "…", 4, 5, 6, "…", 20] style page lists
+function getPageNumbers(current, total) {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages = new Set([1, total, current - 1, current, current + 1]);
+
+  if (current <= 3) [2, 3, 4].forEach((p) => pages.add(p));
+  if (current >= total - 2) [total - 1, total - 2, total - 3].forEach((p) => pages.add(p));
+
+  const sorted = [...pages]
+    .filter((p) => p >= 1 && p <= total)
+    .sort((a, b) => a - b);
+
+  const result = [];
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) result.push("…");
+    result.push(p);
+  });
+
+  return result;
+}
+
+function Pagination({
+  page,
+  totalPages,
+  total,
+  limit,
+  disabled,
+  onPageChange,
+  onLimitChange,
+}) {
+  const start = total === 0 ? 0 : (page - 1) * limit + 1;
+  const end = Math.min(page * limit, total);
+  const pageNumbers = getPageNumbers(page, totalPages);
+
+  const navButton =
+    "inline-flex h-9 items-center justify-center rounded-lg border border-line px-3 text-sm font-medium text-ink transition hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50";
+
+  return (
+    <nav
+      aria-label="Questions pagination"
+      className="flex flex-col gap-3 border-t border-line p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+    >
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+        <span>
+          Showing {start}–{end} of {total}
+        </span>
+        <label className="inline-flex items-center gap-2">
+          Per page
+          <select
+            value={limit}
+            onChange={(event) => onLimitChange(Number(event.target.value))}
+            disabled={disabled}
+            className="rounded-lg border border-line bg-surface py-1.5 pl-2 pr-6 text-xs text-ink outline-none focus:border-brand disabled:opacity-50"
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>{size}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={disabled || page <= 1}
+          aria-label="Previous page"
+          className={navButton}
+        >
+          <ChevronLeft size={16} />
+          <span className="ml-1 hidden sm:inline">Prev</span>
+        </button>
+
+        {pageNumbers.map((item, index) =>
+          item === "…" ? (
+            <span key={`gap-${index}`} className="px-1.5 text-sm text-muted">
+              …
+            </span>
+          ) : (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onPageChange(item)}
+              disabled={disabled}
+              aria-label={`Page ${item}`}
+              aria-current={item === page ? "page" : undefined}
+              className={`inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-3 text-sm font-medium transition disabled:cursor-not-allowed ${
+                item === page
+                  ? "bg-brand text-on-brand"
+                  : "border border-line text-ink hover:bg-canvas disabled:opacity-50"
+              }`}
+            >
+              {item}
+            </button>
+          )
+        )}
+
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={disabled || page >= totalPages}
+          aria-label="Next page"
+          className={navButton}
+        >
+          <span className="mr-1 hidden sm:inline">Next</span>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 export default function Questions() {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,6 +221,21 @@ export default function Questions() {
   const [examFilter, setExamFilter] = useState("all");
   const [sectionFilter, setSectionFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
+
+  // Pagination (server-side: the backend returns one page at a time)
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    total: 0,
+    totalPages: 1,
+  });
+  // Remembers every exam/section we've seen so dropdowns don't shrink
+  // when a filter narrows the current page's results.
+  const [filterOptions, setFilterOptions] = useState([]);
+  const listRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   const [showImport, setShowImport] = useState(false);
   const [file, setFile] = useState(null);
@@ -116,54 +248,98 @@ export default function Questions() {
   const [detailError, setDetailError] = useState("");
 
   const [deletingId, setDeletingId] = useState("");
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [pageError, setPageError] = useState("");
   const fileInputRef = useRef(null);
 
-  async function loadQuestions() {
+  const loadQuestions = useCallback(async () => {
+    // Guards against out-of-order responses (e.g. user clicks pages quickly):
+    // only the latest request is allowed to update the screen.
+    const requestId = ++requestIdRef.current;
+
     setLoading(true);
     setLoadError("");
 
     try {
-      const data = await getQuestions();
-      setQuestions(data);
+      const result = await getQuestions({
+        page,
+        limit,
+        exam: examFilter,
+        section: sectionFilter,
+        difficulty: difficultyFilter,
+      });
+
+      if (requestId !== requestIdRef.current) return;
+
+      // Current page no longer exists (e.g. last item on the last page was
+      // deleted) -> step back one page; the effect will refetch.
+      if (result.questions.length === 0 && page > 1 && result.pagination.total > 0) {
+        setPage(Math.max(1, Math.min(page - 1, result.pagination.totalPages)));
+        return;
+      }
+
+      setQuestions(result.questions);
+      setPagination(result.pagination);
+
+      setFilterOptions((previous) => {
+        const map = new Map(
+          previous.map((o) => [`${o.exam}||${o.section}`, o])
+        );
+        result.questions.forEach((q) => {
+          if (q.exam) {
+            map.set(`${q.exam}||${q.section || ""}`, {
+              exam: q.exam,
+              section: q.section || "",
+            });
+          }
+        });
+        return [...map.values()];
+      });
     } catch (error) {
+      if (requestId !== requestIdRef.current) return;
+
       setLoadError(
         error.response?.data?.message ||
-          "Couldn't load your questions. Check the backend connection and try again."
+        "Couldn't load your questions. Check the backend connection and try again."
       );
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-  }
+  }, [page, limit, examFilter, sectionFilter, difficultyFilter]);
 
+  // Runs on first load AND whenever page / page size / filters change
   useEffect(() => {
     loadQuestions();
-  }, []);
+  }, [loadQuestions]);
 
   const exams = useMemo(
-    () =>
-      [...new Set(questions.map((q) => q.exam).filter(Boolean))].sort(),
-    [questions]
+    () => [...new Set(filterOptions.map((o) => o.exam))].sort(),
+    [filterOptions]
   );
 
   const sections = useMemo(
     () =>
       [
         ...new Set(
-          questions
-            .filter((q) => examFilter === "all" || q.exam === examFilter)
-            .map((q) => q.section)
+          filterOptions
+            .filter((o) => examFilter === "all" || o.exam === examFilter)
+            .map((o) => o.section)
             .filter(Boolean)
         ),
       ].sort(),
-    [questions, examFilter]
+    [filterOptions, examFilter]
   );
 
+  // exam / section / difficulty are filtered by the backend.
+  // Text search only filters the questions on the current page
+  // (the backend has no search parameter yet).
   const filteredQuestions = useMemo(() => {
     const term = search.trim().toLowerCase();
+    if (!term) return questions;
 
-    return questions.filter((question) => {
-      const searchable = [
+    return questions.filter((question) =>
+      [
         question.questionText,
         question.exam,
         question.section,
@@ -172,17 +348,144 @@ export default function Questions() {
       ]
         .filter(Boolean)
         .join(" ")
-        .toLowerCase();
+        .toLowerCase()
+        .includes(term)
+    );
+  }, [questions, search]);
 
-      return (
-        (!term || searchable.includes(term)) &&
-        (examFilter === "all" || question.exam === examFilter) &&
-        (sectionFilter === "all" || question.section === sectionFilter) &&
-        (difficultyFilter === "all" ||
-          (question.difficulty || "medium").toLowerCase() === difficultyFilter)
-      );
+  const hasActiveFilters =
+    search.trim() !== "" ||
+    examFilter !== "all" ||
+    sectionFilter !== "all" ||
+    difficultyFilter !== "all";
+
+  const bankIsEmpty = pagination.total === 0 && !hasActiveFilters;
+
+  function goToPage(next) {
+    if (loading || next < 1 || next > pagination.totalPages || next === page) {
+      return;
+    }
+
+    setSelectedIds(new Set());
+    setPage(next);
+    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function handleLimitChange(nextLimit) {
+    setSelectedIds(new Set());
+    setLimit(nextLimit);
+    setPage(1);
+  }
+
+  function resetToFirstPage() {
+    setSelectedIds(new Set());
+    setPage(1);
+  }
+
+  const visibleIds = filteredQuestions
+    .map(getQuestionId)
+    .filter(Boolean);
+
+  const allVisibleSelected =
+    visibleIds.length > 0 &&
+    visibleIds.every((id) => selectedIds.has(id));
+
+  function toggleQuestionSelection(id) {
+    if (!id || bulkDeleting) return;
+
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
     });
-  }, [questions, search, examFilter, sectionFilter, difficultyFilter]);
+  }
+
+  function toggleSelectAll() {
+    if (bulkDeleting || visibleIds.length === 0) return;
+
+    setSelectedIds((current) => {
+      const next = new Set(current);
+
+      if (visibleIds.every((id) => next.has(id))) {
+        visibleIds.forEach((id) => next.delete(id));
+      } else {
+        visibleIds.forEach((id) => next.add(id));
+      }
+
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    const idsToDelete = [...selectedIds].filter((id) =>
+      questions.some((question) => getQuestionId(question) === id)
+    );
+
+    if (idsToDelete.length === 0) {
+      setSelectedIds(new Set());
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${idsToDelete.length} selected question${idsToDelete.length === 1 ? "" : "s"}? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setBulkDeleting(true);
+    setPageError("");
+
+    try {
+      const results = await Promise.allSettled(
+        idsToDelete.map((id) => deleteQuestion(id))
+      );
+
+      const successfulIds = new Set();
+      const failedIds = new Set();
+
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          successfulIds.add(idsToDelete[index]);
+        } else {
+          failedIds.add(idsToDelete[index]);
+        }
+      });
+
+      setSelectedIds(failedIds);
+
+      if (
+        selectedQuestion &&
+        successfulIds.has(getQuestionId(selectedQuestion))
+      ) {
+        setSelectedQuestion(null);
+        setDetailError("");
+      }
+
+      if (failedIds.size > 0) {
+        setPageError(
+          `${successfulIds.size} question${successfulIds.size === 1 ? "" : "s"} deleted, but ${failedIds.size} could not be deleted. Failed questions remain selected so you can retry.`
+        );
+      } else {
+        setPageError(
+          `${successfulIds.size} question${successfulIds.size === 1 ? "" : "s"} deleted successfully.`
+        );
+      }
+
+      // Refetch so the page, totals and page count stay accurate
+      await loadQuestions();
+    } catch (error) {
+      setPageError(
+        error.response?.data?.message ||
+        "Bulk deletion failed. Please try again."
+      );
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
 
   function openImport() {
     setFile(null);
@@ -225,11 +528,17 @@ export default function Questions() {
 
       if (fileInputRef.current) fileInputRef.current.value = "";
 
-      await loadQuestions();
+      setSelectedIds(new Set());
+
+      if (page !== 1) {
+        setPage(1); // effect refetches page 1
+      } else {
+        await loadQuestions();
+      }
     } catch (error) {
       setImportError(
         error.response?.data?.message ||
-          "Import failed. Check your file format and try again."
+        "Import failed. Check your file format and try again."
       );
     } finally {
       setImporting(false);
@@ -255,7 +564,7 @@ export default function Questions() {
     } catch (error) {
       setDetailError(
         error.response?.data?.message ||
-          "Couldn't load full question details."
+        "Couldn't load full question details."
       );
     } finally {
       setDetailLoading(false);
@@ -276,22 +585,28 @@ export default function Questions() {
 
     if (!confirmed) return;
 
+    if (bulkDeleting) return;
+
     setDeletingId(id);
     setPageError("");
 
     try {
       await deleteQuestion(id);
-      setQuestions((current) =>
-        current.filter((item) => getQuestionId(item) !== id)
-      );
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
 
       if (getQuestionId(selectedQuestion || {}) === id) {
         setSelectedQuestion(null);
       }
+
+      await loadQuestions();
     } catch (error) {
       setPageError(
         error.response?.data?.message ||
-          "Couldn't delete this question. Please try again."
+        "Couldn't delete this question. Please try again."
       );
     } finally {
       setDeletingId("");
@@ -320,13 +635,13 @@ export default function Questions() {
         <div className="rounded-xl border border-line bg-surface p-4">
           <p className="text-sm text-muted">Total questions</p>
           <p className="mt-2 text-2xl font-semibold text-ink">
-            {loading ? "—" : questions.length}
+            {loading && pagination.total === 0 ? "—" : pagination.total}
           </p>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
           <p className="text-sm text-muted">Exams covered</p>
           <p className="mt-2 text-2xl font-semibold text-ink">
-            {loading ? "—" : exams.length}
+            {loading && exams.length === 0 ? "—" : exams.length}
           </p>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4">
@@ -343,7 +658,10 @@ export default function Questions() {
         </div>
       )}
 
-      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
+      <section
+        ref={listRef}
+        className="scroll-mt-4 overflow-hidden rounded-2xl border border-line bg-surface"
+      >
         <div className="border-b border-line p-4 sm:p-5">
           <div className="flex flex-col gap-3 xl:flex-row">
             <div className="relative min-w-0 flex-1">
@@ -368,6 +686,7 @@ export default function Questions() {
                   onChange={(event) => {
                     setExamFilter(event.target.value);
                     setSectionFilter("all");
+                    resetToFirstPage();
                   }}
                   className="max-w-full appearance-none rounded-lg border border-line bg-surface py-3 pl-3 pr-9 text-sm text-ink outline-none focus:border-brand"
                 >
@@ -383,7 +702,10 @@ export default function Questions() {
                 <span className="sr-only">Filter by section</span>
                 <select
                   value={sectionFilter}
-                  onChange={(event) => setSectionFilter(event.target.value)}
+                  onChange={(event) => {
+                    setSectionFilter(event.target.value);
+                    resetToFirstPage();
+                  }}
                   className="max-w-full appearance-none rounded-lg border border-line bg-surface py-3 pl-3 pr-9 text-sm text-ink outline-none focus:border-brand"
                 >
                   <option value="all">All sections</option>
@@ -398,7 +720,10 @@ export default function Questions() {
                 <span className="sr-only">Filter by difficulty</span>
                 <select
                   value={difficultyFilter}
-                  onChange={(event) => setDifficultyFilter(event.target.value)}
+                  onChange={(event) => {
+                    setDifficultyFilter(event.target.value);
+                    resetToFirstPage();
+                  }}
                   className="max-w-full appearance-none rounded-lg border border-line bg-surface py-3 pl-3 pr-9 text-sm text-ink outline-none focus:border-brand"
                 >
                   <option value="all">All levels</option>
@@ -415,7 +740,11 @@ export default function Questions() {
             <p className="text-xs text-muted">
               {loading
                 ? "Loading your questions..."
-                : `${filteredQuestions.length} question${filteredQuestions.length === 1 ? "" : "s"} found`}
+                : `${pagination.total} question${pagination.total === 1 ? "" : "s"} found${
+                    search.trim()
+                      ? ` · ${filteredQuestions.length} match${filteredQuestions.length === 1 ? "" : "es"} on this page`
+                      : ""
+                  }`}
             </p>
             <button
               type="button"
@@ -425,6 +754,38 @@ export default function Questions() {
             >
               Refresh
             </button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-canvas/60 px-3 py-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-ink">
+              <input
+                type="checkbox"
+                checked={allVisibleSelected}
+                onChange={toggleSelectAll}
+                disabled={loading || bulkDeleting || visibleIds.length === 0}
+                className="h-4 w-4 rounded border-line accent-brand focus:ring-brand"
+              />
+              Select all on this page ({filteredQuestions.length})
+            </label>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted">
+                {selectedIds.size} selected
+              </span>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={selectedIds.size === 0 || bulkDeleting || deletingId !== ""}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {bulkDeleting ? (
+                  <LoaderCircle size={15} className="animate-spin" />
+                ) : (
+                  <Trash2 size={15} />
+                )}
+                {bulkDeleting ? "Deleting..." : "Delete selected"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -454,16 +815,16 @@ export default function Questions() {
               <BookOpen size={24} />
             </div>
             <h2 className="mt-4 text-base font-semibold text-ink">
-              {questions.length === 0
+              {bankIsEmpty
                 ? "Your question bank is empty"
                 : "No matching questions"}
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
-              {questions.length === 0
+              {bankIsEmpty
                 ? "Import a CSV or JSON file to add your first questions."
                 : "Try a different search term or change the filters."}
             </p>
-            {questions.length === 0 && (
+            {bankIsEmpty && (
               <button
                 type="button"
                 onClick={openImport}
@@ -488,8 +849,16 @@ export default function Questions() {
                   className="p-4 transition hover:bg-soft sm:p-5"
                 >
                   <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select question ${(page - 1) * limit + index + 1}`}
+                      checked={Boolean(id) && selectedIds.has(id)}
+                      onChange={() => toggleQuestionSelection(id)}
+                      disabled={!id || bulkDeleting || deletingId === id}
+                      className="mt-2 h-4 w-4 shrink-0 rounded border-line accent-brand focus:ring-brand"
+                    />
                     <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-canvas text-sm font-semibold text-muted sm:flex">
-                      {index + 1}
+                      {(page - 1) * limit + index + 1}
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -570,6 +939,18 @@ export default function Questions() {
             })}
           </div>
         )}
+
+        {!loadError && pagination.total > 0 && (
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            limit={pagination.limit}
+            disabled={loading || bulkDeleting}
+            onPageChange={goToPage}
+            onLimitChange={handleLimitChange}
+          />
+        )}
       </section>
 
       {showImport && (
@@ -625,7 +1006,7 @@ export default function Questions() {
               </p>
               <p className="mt-2 break-words text-xs leading-5 text-muted">
                 exam, section, questionText, optionA, optionB, optionC,
-                optionD, correctOption, explanation, subject, topic,
+                optionD, optionE, correctOption, explanation, subject, topic,
                 difficulty, positiveMarks, negativeMarks
               </p>
               <p className="mt-3 text-xs leading-5 text-muted">
@@ -746,3 +1127,4 @@ export default function Questions() {
     </div>
   );
 }
+

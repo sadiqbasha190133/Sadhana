@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
@@ -13,7 +14,7 @@ import {
 import PageHeader from "../components/PageHeader";
 import StatusMessage from "../components/StatusMessage";
 import useStartAttempt from "../hooks/useStartAttempt";
-import { getQuestions } from "../services/questionService";
+import { getAllQuestions } from "../services/questionService";
 import {
   createMockTest,
   deleteMockTest,
@@ -138,7 +139,7 @@ export default function MockTests() {
     try {
       const [testData, questionData] = await Promise.all([
         getMockTests(),
-        getQuestions(),
+        getAllQuestions(),
       ]);
 
       setTests(testData);
@@ -876,3 +877,4 @@ export default function MockTests() {
     </div>
   );
 }
+
