@@ -60,6 +60,40 @@ export const createMockTestSchema = z.object({
     (section) => section.questionIds
   );
 
+  const questionOccurrences = new Map();
+
+  data.sections.forEach((section, sectionIndex) => {
+    section.questionIds.forEach((id, questionIndex) => {
+      if (!questionOccurrences.has(id)) {
+        questionOccurrences.set(id, []);
+      }
+
+      questionOccurrences.get(id).push({
+        section: section.name,
+        sectionIndex,
+        questionIndex
+      });
+    });
+  });
+
+  const duplicates = [...questionOccurrences.entries()]
+    .filter(([id, occurrences]) => occurrences.length > 1);
+
+  console.log("Total Questions:", questionIds.length);
+  console.log("Unique IDs:", questionOccurrences.size);
+
+  console.log(
+    "Duplicate Details:",
+    JSON.stringify(
+      duplicates.map(([id, occurrences]) => ({
+        questionId: id,
+        occurrences
+      })),
+      null,
+      2
+    )
+  );
+
   if (new Set(questionIds).size !== questionIds.length) {
     ctx.addIssue({
       code: "custom",

@@ -13,15 +13,15 @@ async function startServer() {
 
     startAttemptExpiryWorker()
 
-    // const server = app.listen(PORT, () => {
-    //   console.log(`Sadhana API running at http://localhost:${PORT}`);
-    //   console.log(`Health check: http://localhost:${PORT}/api/v1/health`);
-    // });
-
-    const server = app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Sadhana API running on port ${PORT}`);
-      console.log(`Health check: /api/v1/health`);
+    const server = app.listen(PORT, () => {
+      console.log(`Sadhana API running at http://localhost:${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/api/v1/health`);
     });
+
+    // const server = app.listen(PORT, "0.0.0.0", () => {
+    //   console.log(`Sadhana API running on port ${PORT}`);
+    //   console.log(`Health check: /api/v1/health`);
+    // });
 
     const shutdown = (signal) => {
       console.log(`${signal} received. Shutting down...`);

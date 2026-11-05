@@ -22,7 +22,20 @@ export async function createMockTest(req, res, next) {
   try {
     const validation = createMockTestSchema.safeParse(req.body);
 
+    // if (!validation.success) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Invalid mock-test configuration.",
+    //     errors: validation.error.issues.map((issue) => ({
+    //       field: issue.path.join("."),
+    //       message: issue.message
+    //     }))
+    //   });
+    // }
+
     if (!validation.success) {
+      console.log("Validation Errors:", validation.error.issues);
+
       return res.status(400).json({
         success: false,
         message: "Invalid mock-test configuration.",

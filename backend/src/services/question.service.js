@@ -22,7 +22,7 @@ export async function listQuestions(userId, filters, page, limit) {
 
   const [questions, total] = await Promise.all([
     Question.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean(),
