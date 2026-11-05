@@ -215,22 +215,25 @@ export default function AttemptResult() {
         </header>
 
         {/* Overall score banner */}
+        
         <section className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-green-800 via-emerald-700 to-teal-700 p-5 text-white shadow-md sm:p-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-ink">
-                <Trophy size={20} />
-                <p className="text-sm font-semibold">Overall performance</p>
+              <div className="flex items-center gap-2">
+                <Trophy size={20} className="text-white" />
+                <p className="text-sm font-semibold text-white">
+                  Overall performance
+                </p>
               </div>
 
-              <p className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
+              <p className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
                 {formatValue(summary.score)}
-                <span className="ml-2 text-base font-medium text-ink">
+                <span className="ml-2 text-base font-medium text-white">
                   marks
                 </span>
               </p>
 
-              <p className="mt-2 max-w-xl text-sm text-ink">
+              <p className="mt-2 max-w-xl text-sm text-white/90">
                 Review your score, accuracy, and section-wise performance
                 below.
               </p>
@@ -238,14 +241,14 @@ export default function AttemptResult() {
 
             <div className="grid grid-cols-2 gap-3 sm:min-w-56">
               <div className="rounded-xl border border-white/20 bg-white/10 p-3">
-                <p className="text-xs text-ink">Positive marks</p>
+                <p className="text-xs text-white/90">Positive marks</p>
                 <p className="mt-1 text-2xl font-bold text-emerald-200">
                   +{formatValue(summary.positiveScore)}
                 </p>
               </div>
 
               <div className="rounded-xl border border-white/20 bg-white/10 p-3">
-                <p className="text-xs text-ink">Negative marks</p>
+                <p className="text-xs text-white/90">Negative marks</p>
                 <p className="mt-1 text-2xl font-bold text-rose-200">
                   −{formatValue(summary.negativeScore)}
                 </p>
@@ -253,6 +256,7 @@ export default function AttemptResult() {
             </div>
           </div>
         </section>
+
 
         {/* Overall performance cards */}
         <section className="mb-8">
